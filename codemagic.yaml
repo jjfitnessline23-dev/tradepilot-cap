@@ -1,0 +1,50 @@
+# Codemagic cloud-Mac build -> TestFlight for TradePilot.
+# TradePilot is a Capacitor shell over the live web app (password-gated webview),
+# so there's no Firebase or Sign in with Apple to configure — just sign + ship.
+workflows:
+  ios-testflight:
+    name: TradePilot iOS TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: Codemagic
+    environment:
+      groups:
+        - ios
+      vars:
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+        BUNDLE_ID: com.tradepilot.app
+        # Set APP_STORE_ID once the app record exists in App Store Connect.
+        APP_STORE_ID: ""
+      node: 22
+    scripts:
+      - name: Install npm deps
+        script: npm install
+      - name: Capacitor sync iOS
+        script: npx cap sync ios
+      - name: Set up code signing (fetch cert + profile)
+        script: |
+          keychain initialize
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null || true
+          echo "CERT len: ${#CM_CERTIFICATE}  PW len: ${#CM_CERTIFICATE_PASSWORD}"
+          if [ -z "$CM_CERTIFICATE" ]; then echo "### FIX: add CM_CERTIFICATE + CM_CERTIFICATE_PASSWORD to this app (Environment variables, group 'ios', Secret)"; exit 1; fi
+          printf '%s' "$CM_CERTIFICATE" | openssl base64 -d -A > /tmp/dist.p12
+          ( openssl pkcs12 -in /tmp/dist.p12 -passin pass:"$CM_CERTIFICATE_PASSWORD" -nocerts -nodes 2>/dev/null || openssl pkcs12 -in /tmp/dist.p12 -passin pass:"$CM_CERTIFICATE_PASSWORD" -nocerts -nodes -legacy 2>/dev/null ) | openssl rsa -out /tmp/key.pem 2>/dev/null
+          if [ ! -s /tmp/key.pem ]; then echo "### FIX: key extraction failed - CM_CERTIFICATE or CM_CERTIFICATE_PASSWORD is wrong"; exit 1; fi
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --certificate-key @file:/tmp/key.pem --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Increment build number
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_ID" 2>/dev/null || echo 0)
+          cd ios/App
+          agvtool new-version -all $((LATEST + 1))
+      - name: Build IPA
+        script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME" --disable-xcpretty
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

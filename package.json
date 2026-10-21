@@ -1,0 +1,23 @@
+{
+  "name": "tradepilot-cap",
+  "version": "1.0.0",
+  "description": "TradePilot iOS and Android app (Capacitor shell)",
+  "main": "index.js",
+  "scripts": {
+    "cap:add:ios": "npx cap add ios",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "typescript": "^5.9.3"
+  }
+}
