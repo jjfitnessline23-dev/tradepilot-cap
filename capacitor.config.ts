@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.tradepilot.app',
+  appId: 'com.jjfitnessline.tradepilot',
   appName: 'TradePilot',
   webDir: 'www',
   server: {

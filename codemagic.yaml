@@ -14,7 +14,7 @@ workflows:
       vars:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
-        BUNDLE_ID: com.tradepilot.app
+        BUNDLE_ID: com.jjfitnessline.tradepilot
         # Set APP_STORE_ID once the app record exists in App Store Connect.
         APP_STORE_ID: ""
       node: 22
